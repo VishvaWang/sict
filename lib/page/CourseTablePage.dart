@@ -3,16 +3,20 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_just_toast/flutter_just_toast.dart';
 import 'package:sict/entity/Course.dart';
 import 'package:sict/page/LoginPage.dart';
 import 'package:sict/page/Scorepage.dart';
 import 'package:sict/tools/Info.dart';
+import 'package:sict/tools/MyHttp.dart';
 import 'package:sict/tools/Sict.dart';
 
+GlobalKey myKey = new GlobalKey();
 class CourseTablePage extends StatelessWidget{
-
   @override
   Widget build(BuildContext context) {
+    courses;
+    context;
     return Scaffold(
         drawer: Drawer(
           // Add a ListView to the drawer. This ensures the user can scroll
@@ -79,22 +83,109 @@ class CourseTablePage extends StatelessWidget{
           ),
         ),
         appBar: AppBar(
-          title: Text('课程'),
+          title: Text('课程 - 第${Sict.thisWeek()}周'),
+//          centerTitle: true,
+          actions: <Widget>[ //导航栏右侧菜单
+            IconButton(
+                icon: Icon(Icons.refresh),
+                onPressed: () async {
+                  if(await LoginPageState().tryLogin()) {
+
+                    HttpClientResponse response =await Sict.queryCourse();
+                    String body=await response.transform(utf8.decoder).join();
+                    Info.set('${Sict.thisWeek()}', body);
+
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (context)=>CourseTablePage(),),
+                    );
+                    Toast.show(message:'刷新成功');
+                  }else {
+                    MyHttp.emptyCookie();
+                  }
+                }
+            ),
+          ],
         ),
-        body: Container(
-              child: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  getExpanded(1),
-                  getExpanded(3),
-                  getExpanded(5),
-                  getExpanded(7),
-                  getExpanded(9),
-                  Text('星期六'+lessons.where((c)=>c.weekday==6).toList()[0].toString())
-                ],),
-        ),
+        body: Flow(
+          key: myKey,
+          delegate: CourseFlowDelegate(),
+          children:courses.map((e)=>Container(
+              color:Color(courses.indexOf(e)*200000000),
+              child:Text(e.toString())
+          )).toList(),
+        )
+//        GridView(
+//          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+//            crossAxisCount: 5, //横轴三个子widget
+//            childAspectRatio: 0.703 //宽高比为1时，子widget
+//          ),
+//          children:Containers().toList(),
+//       )
+//          Container(
+//              child: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//                children: <Widget>[
+//                  getExpanded(1),
+//                  getExpanded(3),
+//                  getExpanded(5),
+//                  getExpanded(7),
+//                  getExpanded(9),
+//
+////                  Text('星期六'+lessons.where((c)=>c.weekday==6).toList()[0].toString())
+//                ],),
+//        ),
     );
   }
 }
+
+class CourseFlowDelegate extends FlowDelegate{
+  double width;
+  double height;
+  @override
+  void paintChildren(FlowPaintingContext context) {
+    width=context.size.width/5;
+    height=context.size.height/10;
+    double x =0;
+    double y =0;
+    for (int i = 0; i < context.childCount; i++) {
+      x = (courses[i].weekday-1)*width;
+      y = (courses[i].startLesson-1)*height;
+      context.paintChild(i, transform: Matrix4.translationValues(x, y, 0.0));
+      print(courses[i].name+'x坐标:$x y坐标:$y start:${courses[i].startLesson}');
+      }
+    }
+
+
+  @override
+  BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) {
+    var size=myKey.currentContext.findRenderObject().paintBounds;
+    width=size.width/5;
+    height=size.height/5;
+//    print(courses[i].name+' hegit:${height*(courses[i].endLesson-courses[i].startLesson+1)/2}');
+    return BoxConstraints.expand(width: width,height:height*(courses[i].endLesson-courses[i].startLesson+1)/2);
+  }
+
+  @override
+  bool shouldRepaint(FlowDelegate oldDelegate) {
+    return oldDelegate != this;
+  }
+
+}
+List<Course> courses=Course.creatList(Info.get(Sict.thisWeek().toString()));
+
+//mergeCourse(){
+//  courses.forEach((e){
+//    courses.where((a){
+//      return e.weekday==a.weekday&&
+//        e.classRoom==a.classRoom&&
+//        e.name==a.name&&
+//        e.startLesson==a.
+//    });
+//  });
+//}
+Iterable<Container> Containers()sync*{
+  for(int i=0;i<25;i++)yield Container(color:Color(i*20000000),);
+}
+
 List<Course> lessons= Course.creatList(Info.get(Sict.thisWeek().toString()));
 getExpandeds(lesson){
   getExpanded(weekDay){

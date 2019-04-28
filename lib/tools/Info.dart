@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 class Info {
-  static const String dir='/data/user/0/Wang.Vishva.sict/app_flutter';
+  static const String dir='/data/user/0/Wang.Vishva.sict/';
   static const String filePath='$dir/info.json';
   static Map info={};
   static Map writedInfo={};

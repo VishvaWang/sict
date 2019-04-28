@@ -11,12 +11,17 @@ class Course {
     }
 
   }
-  static List<Course> creatList(String s){
+  //教师姓名不对,姓名应该是下一个课程的
+  static List<Course> creatList(String htmlString){
     List<Course> courses=List();
-    int index =s.indexOf('activity = new TaskActivity');//设置每个课程的代码分别以activity = new TaskActivity开头,
-    s=s.substring(index);                              //去除第一个课程代码前面的无用部分
-    //去除脚本后的部分              分割并跳过(为空字符串)首元素               再次去除无用的后半部分                     停课则跳过
-    s.split('</script>')[0].split('activity = new TaskActivity').sublist(1).map((s)=>s.split('var actTeachers')[0]).where((s)=>!s.contains('停课')).forEach((s){
+    int index =htmlString.indexOf('activity = new TaskActivity');//设置每个课程的代码分别以activity = new TaskActivity开头,
+    htmlString=htmlString.substring(index);                              //去除第一个课程代码前面的无用部分
+
+    htmlString.split('</script>')[0]//去除脚本后的部分
+        .split('activity = new TaskActivity').sublist(1)//生成列表并跳过(为空字符串的)首元素
+        .map((s)=>s.split('var actTeachers')[0])//再次去除无用的后半部分
+        .where((s)=>!s.contains('停课'))//停课则跳过
+    .forEach((s){//遍历
       var data =s.split(';');
 
       var couresData=data[0].split(',').sublist(5).map((s)=>s.replaceAll('"', '')).toList(); //整理字符串生成的部分数据如例,并去除双引号:["科研设计与论文撰写(B005007-2.01)","1839" "本部C401", "01111111111111110000000000000000000000000000000000000"]
@@ -55,7 +60,7 @@ class Course {
   @override
   String toString() {
     var shortName=name.contains('(')?name.split('(')[0]:name;
-    return '$shortName $classRoom';
+    return '$shortName\n$classRoom';
   }
 
 }
