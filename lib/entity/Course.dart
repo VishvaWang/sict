@@ -12,8 +12,9 @@ class Course {
 
   }
   //教师姓名不对,姓名应该是下一个课程的
-  static List<Course> creatList(String htmlString){
+  static List<Course> creatList(String htmlString)  {
     List<Course> courses=List();
+//    String htmlString=await htmlStringf;
     int index =htmlString.indexOf('activity = new TaskActivity');//设置每个课程的代码分别以activity = new TaskActivity开头,
     htmlString=htmlString.substring(index);                              //去除第一个课程代码前面的无用部分
 

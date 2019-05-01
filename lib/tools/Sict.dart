@@ -1,11 +1,21 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:sict/page/LoginPage.dart';
 import 'package:sict/tools/Info.dart';
 import 'package:sict/tools/MyHttp.dart';
 import 'package:sict/entity/User.dart';
 
 class Sict {
+  static refreshCourse() async {
+    if(await LoginPageState().tryLogin()) {
+      HttpClientResponse response =await Sict.queryCourse();
+      String body=await response.transform(utf8.decoder).join();
+      Info.set('${Sict.thisWeek()}', body);
+    }else {
+      MyHttp.emptyCookie();
+    }
+  }
   static  Future<HttpClientResponse> queryScore(){
      return  Sict.get('/teach/grade/course/person!search.action','semesterId=60');
   }
@@ -43,7 +53,7 @@ class Sict {
         'ignoreHead=1&setting.kind=std&startWeek=${thisWeek()}&semester.id=61&ids=$ids');
   }
   static int thisWeek() {
-    Duration difference = DateTime.now().difference(DateTime(2019,2,17));
+    Duration difference = DateTime.now().difference(DateTime(2019,2,18));
     return difference.inDays~/7+1;
   }
   static Future<HttpClientResponse> post(String path,[data]) {

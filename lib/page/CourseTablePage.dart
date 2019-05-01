@@ -3,20 +3,31 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_just_toast/flutter_just_toast.dart';
 import 'package:sict/entity/Course.dart';
 import 'package:sict/page/LoginPage.dart';
 import 'package:sict/page/Scorepage.dart';
 import 'package:sict/tools/Info.dart';
-import 'package:sict/tools/MyHttp.dart';
 import 'package:sict/tools/Sict.dart';
 
-GlobalKey myKey = new GlobalKey();
+GlobalKey myKey ;
+String body=Info.get(Sict.thisWeek().toString());
+List<Course> courses=body==null?!null:Course.creatList(body);
+
 class CourseTablePage extends StatelessWidget{
+  refreshPage(BuildContext context) async {
+    await Sict.refreshCourse();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context)=>CourseTablePage(),),
+    );
+  }
   @override
   Widget build(BuildContext context) {
-    courses;
-    context;
+    myKey=GlobalKey();
+    if (Info.get(Sict.thisWeek().toString())==null){
+      refreshPage(context);
+      return Center(heightFactor:9,child:CircularProgressIndicator(value: null,));
+    }
+    courses =Course.creatList(Info.get(Sict.thisWeek().toString()));
     return Scaffold(
         drawer: Drawer(
           // Add a ListView to the drawer. This ensures the user can scroll
@@ -36,7 +47,7 @@ class CourseTablePage extends StatelessWidget{
                 title: Text('课程'),
                 onTap: () {
                   Navigator.of(context).push(
-                    new MaterialPageRoute(
+                    MaterialPageRoute(
                       builder: (context)
                       =>CourseTablePage(),
                     ),
@@ -58,7 +69,7 @@ class CourseTablePage extends StatelessWidget{
                   List<List<String>>tdsList=trs.map((tr)=>RegExp(r'<td.*?>((.|\r|\n)*?)</td>').allMatches(tr).map((m)=>m.group(1).trim()).toList()).toList();
 
                   Navigator.of(context).push(
-                    new MaterialPageRoute(
+                    MaterialPageRoute(
                       builder: (context)
                       =>ScorePage(tdsList),
                     ),
@@ -71,7 +82,7 @@ class CourseTablePage extends StatelessWidget{
                 title: Text('注销'),
                 onTap: () {
                   Navigator.of(context).pushReplacement(
-                    new MaterialPageRoute(
+                    MaterialPageRoute(
                       builder: (context)
                       =>LoginPage(),
                     ),
@@ -85,35 +96,41 @@ class CourseTablePage extends StatelessWidget{
         appBar: AppBar(
           title: Text('课程 - 第${Sict.thisWeek()}周'),
 //          centerTitle: true,
-          actions: <Widget>[ //导航栏右侧菜单
-            IconButton(
-                icon: Icon(Icons.refresh),
-                onPressed: () async {
-                  if(await LoginPageState().tryLogin()) {
-
-                    HttpClientResponse response =await Sict.queryCourse();
-                    String body=await response.transform(utf8.decoder).join();
-                    Info.set('${Sict.thisWeek()}', body);
-
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context)=>CourseTablePage(),),
-                    );
-                    Toast.show(message:'刷新成功');
-                  }else {
-                    MyHttp.emptyCookie();
-                  }
-                }
-            ),
-          ],
+//          actions: <Widget>[ //导航栏右侧菜单
+//            IconButton(
+//                icon: Icon(Icons.refresh),
+//                onPressed: () async {
+//                  if(await LoginPageState().tryLogin()) {
+//
+//                    HttpClientResponse response =await Sict.queryCourse();
+//                    String body=await response.transform(utf8.decoder).join();
+//                    Info.set('${Sict.thisWeek()}', body);
+//
+//                    Navigator.of(context).pushReplacement(
+//                      MaterialPageRoute(builder: (context)=>CourseTablePage(),),
+//                    );
+//                    Toast.show(message:'刷新成功');
+//                  }else {
+//                    MyHttp.emptyCookie();
+//                  }
+//                }
+//            ),
+//          ],
         ),
-        body: Flow(
-          key: myKey,
-          delegate: CourseFlowDelegate(),
-          children:courses.map((e)=>Container(
-              color:Color(courses.indexOf(e)*200000000),
-              child:Text(e.toString())
-          )).toList(),
-        )
+        body:RefreshIndicator(
+            child: SingleChildScrollView(
+              key: myKey,
+
+              child: Flow(
+              delegate: CourseFlowDelegate(),
+              children:courses.map((e)=>Container(
+                  color:Color(courses.indexOf(e)*200000000),
+                  child:Text(e.toString())
+              )).toList(),
+            ),),
+            onRefresh: () async {
+              refreshPage(context);
+            })
 //        GridView(
 //          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
 //            crossAxisCount: 5, //横轴三个子widget
@@ -135,11 +152,23 @@ class CourseTablePage extends StatelessWidget{
 //        ),
     );
   }
+//  Future<String> getCourseBody(BuildContext context) async {
+//
+//  }
+
 }
 
 class CourseFlowDelegate extends FlowDelegate{
   double width;
   double height;
+
+  @override
+  Size getSize(BoxConstraints constraints) {
+
+    var size=(myKey.currentContext.findRenderObject().constraints as BoxConstraints).biggest;
+    return Size(size.width,size.height+1);
+  }
+
   @override
   void paintChildren(FlowPaintingContext context) {
     width=context.size.width/5;
@@ -150,14 +179,14 @@ class CourseFlowDelegate extends FlowDelegate{
       x = (courses[i].weekday-1)*width;
       y = (courses[i].startLesson-1)*height;
       context.paintChild(i, transform: Matrix4.translationValues(x, y, 0.0));
-      print(courses[i].name+'x坐标:$x y坐标:$y start:${courses[i].startLesson}');
+//      print(courses[i].name+'x坐标:$x y坐标:$y start:${courses[i].startLesson}');
       }
     }
 
 
   @override
   BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) {
-    var size=myKey.currentContext.findRenderObject().paintBounds;
+    var size=(myKey.currentContext.findRenderObject().constraints as BoxConstraints).biggest;
     width=size.width/5;
     height=size.height/5;
 //    print(courses[i].name+' hegit:${height*(courses[i].endLesson-courses[i].startLesson+1)/2}');
@@ -170,8 +199,6 @@ class CourseFlowDelegate extends FlowDelegate{
   }
 
 }
-List<Course> courses=Course.creatList(Info.get(Sict.thisWeek().toString()));
-
 //mergeCourse(){
 //  courses.forEach((e){
 //    courses.where((a){
@@ -186,32 +213,32 @@ Iterable<Container> Containers()sync*{
   for(int i=0;i<25;i++)yield Container(color:Color(i*20000000),);
 }
 
-List<Course> lessons= Course.creatList(Info.get(Sict.thisWeek().toString()));
-getExpandeds(lesson){
-  getExpanded(weekDay){
-
-    List<Course> lessons= Course.creatList(Info.get(Sict.thisWeek().toString()))
-        .where((f)=>f.startLesson==lesson)
-        .toList();
-    if(lessons.any((f)=>f.weekday==weekDay)) {
-      var c=lessons.firstWhere((c)=>c.weekday==weekDay);
-      return Expanded(flex: 1,child: Container(
-        color: Colors.blueAccent,child: Text(
-          c.toString()
-      ),
-      ),);
-    }else{
-      return Expanded(flex: 1,child: Container(
-        child: Text(''),
-      ),);
-    }
-  }
-  List<Expanded> r=List();
-  for(int i= 1;i<=5;i++) {
-    r.add(getExpanded(i));
-  }
-  return r;
-}
-getExpanded(lesson){
-  return Expanded(flex: 1,child:Row(children:getExpandeds(lesson),));
-}
+//List<Course> lessons= Course.creatList(Info.get(Sict.thisWeek().toString())) ;
+//getExpandeds(lesson){
+//  getExpanded(weekDay){
+//
+//    List<Course> lessons= Course.creatList(Info.get(Sict.thisWeek().toString()))
+//        .where((f)=>f.startLesson==lesson)
+//        .toList();
+//    if(lessons.any((f)=>f.weekday==weekDay)) {
+//      var c=lessons.firstWhere((c)=>c.weekday==weekDay);
+//      return Expanded(flex: 1,child: Container(
+//        color: Colors.blueAccent,child: Text(
+//          c.toString()
+//      ),
+//      ),);
+//    }else{
+//      return Expanded(flex: 1,child: Container(
+//        child: Text(''),
+//      ),);
+//    }
+//  }
+//  List<Expanded> r=List();
+//  for(int i= 1;i<=5;i++) {
+//    r.add(getExpanded(i));
+//  }
+//  return r;
+//}
+//getExpanded(lesson){
+//  return Expanded(flex: 1,child:Row(children:getExpandeds(lesson),));
+//}
