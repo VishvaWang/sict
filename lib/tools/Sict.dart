@@ -1,14 +1,41 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:sict/page/LoginPage.dart';
 import 'package:sict/tools/Info.dart';
 import 'package:sict/tools/MyHttp.dart';
 import 'package:sict/entity/User.dart';
 
 class Sict {
+  static login(String account ,String password) async {
+    HttpClientResponse response=await Sict.post('login.action');
+    if(response.headers.value('set-cookie')!=null) {
+      MyHttp.cookie =response.headers.value('set-cookie');
+    };
+    if(response.statusCode==302)return true;
+    var html=await response.transform(utf8.decoder).join();
+    var index=html.indexOf("CryptoJS.SHA1('")+"CryptoJS.SHA1('".length;
+    var sha1String = html.substring(index,index+37);
+    var bytes = utf8.encode(sha1String+password);
+    sleep(new Duration(milliseconds: 500));
+    response=await  Sict.post('login.action',
+        'username=${account}&password=${sha1.convert(bytes).toString()}&encodedPassword=&session_locale=zh_CN');
+    if(response.statusCode==302) {
+      return true;
+    }else {
+      String messageLine=await response
+          .transform(utf8.decoder) //解码字节流
+          .transform(new LineSplitter()).elementAt(62);
+      String message=RegExp(r'>(.*?)<').firstMatch(messageLine).group(1);
+    }
+    return false;
+  }
+  static loginByCache(){
+    return login(Info.get('account'), Info.get('password'));
+  }
   static refreshCourse() async {
-    if(await LoginPageState().tryLogin()) {
+    if(await loginByCache()) {
       HttpClientResponse response =await Sict.queryCourse();
       String body=await response.transform(utf8.decoder).join();
       Info.set('${Sict.thisWeek()}', body);

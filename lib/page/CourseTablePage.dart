@@ -12,7 +12,7 @@ import 'package:sict/tools/Sict.dart';
 GlobalKey myKey ;
 String body=Info.get(Sict.thisWeek().toString());
 List<Course> courses=body==null?!null:Course.creatList(body);
-
+ScrollController scrollController=ScrollController();
 class CourseTablePage extends StatelessWidget{
   refreshPage(BuildContext context) async {
     await Sict.refreshCourse();
@@ -23,6 +23,7 @@ class CourseTablePage extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     myKey=GlobalKey();
+    scrollController.addListener((){scrollController.jumpTo(0);});
     if (Info.get(Sict.thisWeek().toString())==null){
       refreshPage(context);
       return Center(heightFactor:9,child:CircularProgressIndicator(value: null,));
@@ -120,7 +121,7 @@ class CourseTablePage extends StatelessWidget{
         body:RefreshIndicator(
             child: SingleChildScrollView(
               key: myKey,
-
+              controller:scrollController ,
               child: Flow(
               delegate: CourseFlowDelegate(),
               children:courses.map((e)=>Container(

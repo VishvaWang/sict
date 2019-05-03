@@ -18,12 +18,19 @@ class LoginPage extends StatefulWidget{
 enum state{inputing,logining,reinputing}
 
 class LoginPageState extends State<LoginPage>{
-  final TextEditingController accountController = TextEditingController(text:'201608920132');
-  final TextEditingController passwordController = TextEditingController(text:'058154');
+  setDefault(){
+    accountController.text='201608920132';
+    passwordController.text='058154';
+    return true;
+  }
+  final TextEditingController accountController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   state s = state.inputing;
+
   List<String> titles=['输入中 · · ·','登录中 · · ·','重新输入 · · ·'];
   bool pwdError;
   Widget getBody(){
+    assert(setDefault());
     switch (s){
       case state.inputing:
       case state.reinputing:
