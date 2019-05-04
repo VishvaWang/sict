@@ -2,17 +2,18 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:sict/entity/Course.dart';
 import 'package:sict/page/LoginPage.dart';
 import 'package:sict/page/Scorepage.dart';
 import 'package:sict/tools/Info.dart';
 import 'package:sict/tools/Sict.dart';
-
 GlobalKey myKey ;
 String body=Info.get(Sict.thisWeek().toString());
 List<Course> courses=body==null?!null:Course.creatList(body);
 ScrollController scrollController=ScrollController();
+
 class CourseTablePage extends StatelessWidget{
   refreshPage(BuildContext context) async {
     await Sict.refreshCourse();
@@ -125,8 +126,20 @@ class CourseTablePage extends StatelessWidget{
               child: Flow(
               delegate: CourseFlowDelegate(),
               children:courses.map((e)=>Container(
-                  color:Color(courses.indexOf(e)*200000000),
-                  child:Text(e.toString())
+                  margin:EdgeInsets.all(2),
+                  padding: EdgeInsets.all(3),
+                  child:Text(
+                    e.toString(),
+                    style: TextStyle(
+//                      color: Colors.
+                    ),
+                  ),
+                  decoration:BoxDecoration(
+                      color: Colors.grey,
+//                      color:Color(courses.indexOf(e)*1000000000),
+                      borderRadius:BorderRadius.circular(10)
+                  ),
+
               )).toList(),
             ),),
             onRefresh: () async {
@@ -162,23 +175,31 @@ class CourseTablePage extends StatelessWidget{
 class CourseFlowDelegate extends FlowDelegate{
   double width;
   double height;
-
+  double childWidth;
+  double childHeight;
+  EdgeInsets margin;
+  double blanking=25;
   @override
   Size getSize(BoxConstraints constraints) {
 
     var size=(myKey.currentContext.findRenderObject().constraints as BoxConstraints).biggest;
+    width=size.width;
+    height=size.height;
+    margin=EdgeInsets.symmetric(horizontal: width*0.043,vertical: blanking/3);
+    childWidth=(width-margin.left*2)/5;
+    childHeight=(height-margin.top*2-blanking*2)/10;
     return Size(size.width,size.height+1);
   }
 
   @override
   void paintChildren(FlowPaintingContext context) {
-    width=context.size.width/5;
-    height=context.size.height/10;
-    double x =0;
-    double y =0;
+
     for (int i = 0; i < context.childCount; i++) {
-      x = (courses[i].weekday-1)*width;
-      y = (courses[i].startLesson-1)*height;
+
+      double x =margin.left+(courses[i].weekday-1)*childWidth;
+      double y =margin.top+(courses[i].startLesson-1)*childHeight;
+      if (courses[i].startLesson>4) y+=blanking;
+      if (courses[i].startLesson>8) y+=blanking;
       context.paintChild(i, transform: Matrix4.translationValues(x, y, 0.0));
 //      print(courses[i].name+'x坐标:$x y坐标:$y start:${courses[i].startLesson}');
       }
@@ -187,11 +208,8 @@ class CourseFlowDelegate extends FlowDelegate{
 
   @override
   BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) {
-    var size=(myKey.currentContext.findRenderObject().constraints as BoxConstraints).biggest;
-    width=size.width/5;
-    height=size.height/5;
 //    print(courses[i].name+' hegit:${height*(courses[i].endLesson-courses[i].startLesson+1)/2}');
-    return BoxConstraints.expand(width: width,height:height*(courses[i].endLesson-courses[i].startLesson+1)/2);
+    return BoxConstraints.expand(width: childWidth,height:childHeight*(courses[i].endLesson-courses[i].startLesson+1));
   }
 
   @override

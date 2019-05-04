@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
-
+//自动存储有问题 todo
 class Info {
+
   static const String dir='/data/user/0/Wang.Vishva.sict';
   static const String filePath='$dir/info.json';
   static Map info={};
   static Map writedInfo={};
   static bool firstLaunch;
   static init() async {
+
     firstLaunch=!await File(filePath).exists();
     if(!firstLaunch) info = json.decode(await File(filePath).readAsString());
   }

@@ -27,8 +27,8 @@ class Course {
 
       var couresData=data[0].split(',').sublist(5).map((s)=>s.replaceAll('"', '')).toList(); //整理字符串生成的部分数据如例,并去除双引号:["科研设计与论文撰写(B005007-2.01)","1839" "本部C401", "01111111111111110000000000000000000000000000000000000"]
       assert(couresData.length==9||couresData.length==10);
-      if (couresData.length==10) {//如果上课地点中出现了逗号,调整一下
-        couresData[2]=couresData[2]+couresData[3];
+      if (couresData.length==10) {//如果上课地点中出现了逗号,特殊处理
+        couresData[2]=couresData[2]+'，'+couresData[3];
         couresData.removeAt(3);
       }
 
@@ -61,7 +61,8 @@ class Course {
   @override
   String toString() {
     var shortName=name.contains('(')?name.split('(')[0]:name;
-    return '$shortName\n$classRoom';
+    var shorClassRoom=classRoom.split('，')[0];
+    return '$shortName\n\n$shorClassRoom';
   }
 
 }
