@@ -39,6 +39,7 @@ class Sict {
       HttpClientResponse response =await Sict.queryCourse();
       String body=await response.transform(utf8.decoder).join();
       Info.set('${Sict.thisWeek()}', body);
+      Info.saveSync();
     }else {
       MyHttp.emptyCookie();
     }
