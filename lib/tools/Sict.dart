@@ -9,18 +9,29 @@ import 'package:sict/entity/User.dart';
 
 class Sict {
   static login(String account ,String password) async {
+
     HttpClientResponse response=await Sict.post('login.action');
+
     if(response.headers.value('set-cookie')!=null) {
       MyHttp.cookie =response.headers.value('set-cookie');
-    };
-    if(response.statusCode==302)return true;
+    }
+
+    if(response.statusCode==302){
+      return true;
+    }
+
     var html=await response.transform(utf8.decoder).join();
     var index=html.indexOf("CryptoJS.SHA1('")+"CryptoJS.SHA1('".length;
     var sha1String = html.substring(index,index+37);
     var bytes = utf8.encode(sha1String+password);
+
     sleep(new Duration(milliseconds: 500));
-    response=await  Sict.post('login.action',
-        'username=${account}&password=${sha1.convert(bytes).toString()}&encodedPassword=&session_locale=zh_CN');
+
+    response=await  Sict.post(
+        'login.action',
+        'username=${account}&password=${sha1.convert(bytes).toString()}&encodedPassword=&session_locale=zh_CN'
+    );
+
     if(response.statusCode==302) {
       return true;
     }else {
@@ -31,22 +42,28 @@ class Sict {
     }
     return false;
   }
+
   static loginByCache(){
     return login(Info.get('account'), Info.get('password'));
   }
-  static refreshCourse() async {
+
+  static Future refreshCourse() async {
     if(await loginByCache()) {
       HttpClientResponse response =await Sict.queryCourse();
       String body=await response.transform(utf8.decoder).join();
       Info.set('${Sict.thisWeek()}', body);
       Info.saveSync();
+      return true;
     }else {
       MyHttp.emptyCookie();
+      return false;
     }
   }
+
   static  Future<HttpClientResponse> queryScore(){
      return  Sict.get('/teach/grade/course/person!search.action','semesterId=60');
   }
+
   static Future<User> getUser() async {
     User user=User();
 
@@ -70,28 +87,40 @@ class Sict {
     user.classeAndGrade=getText(lines[168]);
 
     return user;
-  } static Future<HttpClientResponse> queryCourse() async {
+  }
+
+  static Future<HttpClientResponse> queryCourse() async {
 
     String idsLine = await (await Sict.getLines('courseTableForStd.action'))
                               .elementAt(146);
     String ids=  RegExp(r'[0-9]+').stringMatch(idsLine);
     Info.set('ids', ids);
 
-    return await Sict.post('courseTableForStd!courseTable.action',
-        'ignoreHead=1&setting.kind=std&startWeek=${thisWeek()}&semester.id=61&ids=$ids');
+    return await Sict.post(
+        'courseTableForStd!courseTable.action',
+        'ignoreHead=1&setting.kind=std&startWeek=${thisWeek()}&semester.id=${getSemesterId()}&ids=$ids'
+    );
+
   }
+  static int getSemesterId()=>82;
+
   static int thisWeek() {
-    Duration difference = DateTime.now().difference(DateTime(2019,2,18));
+    Duration difference = DateTime.now().difference(getSemesterStartDate());
     return difference.inDays~/7+1;
   }
+
+  static DateTime getSemesterStartDate() => DateTime(2019,6,10);
+
   static Future<HttpClientResponse> post(String path,[data]) {
     Uri uri=Uri(scheme: "http",host: "szyjxgl.sict.edu.cn",port:9000,path:'eams/$path');
     return MyHttp.post(uri ,data);
   }
+
   static Future<HttpClientResponse> get(String path,String queryString) {
     Uri uri=Uri(scheme: "http",host: "szyjxgl.sict.edu.cn",port:9000,path:'eams/$path',query: queryString);
     return MyHttp.get(uri);
   }
+
   static Future<Stream<String>> getLines(String path,[data]) async {
     return (await Sict.post(path,data)).asBroadcastStream()
         .transform(utf8.decoder)

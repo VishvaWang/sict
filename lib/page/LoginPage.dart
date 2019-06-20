@@ -15,9 +15,10 @@ class LoginPage extends StatefulWidget{
   }
 }
 
-enum state{inputing,logining,reinputing}
+enum loginPageState{inputing,logining,reinputing}
 
 class LoginPageState extends State<LoginPage>{
+
   setDefault(){
     accountController.text='201608920132';
     passwordController.text='058154';
@@ -25,17 +26,38 @@ class LoginPageState extends State<LoginPage>{
   }
   final TextEditingController accountController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  state s = state.inputing;
+  loginPageState currentLoginPageState = loginPageState.inputing;
 
   List<String> titles=['输入中 · · ·','登录中 · · ·','重新输入 · · ·'];
   bool pwdError;
+
+
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+
+      appBar: AppBar(
+        title: Text(titles[currentLoginPageState.index]),
+      ),
+      body:getBody()
+
+    );
+  }
   Widget getBody(){
+
     assert(setDefault());
-    switch (s){
-      case state.inputing:
-      case state.reinputing:
+
+    switch (currentLoginPageState){
+
+      case loginPageState.inputing:
+      case loginPageState.reinputing:
+
         return Column(
+
           children: <Widget>[
+
             TextField(
               controller: accountController,
               autofocus: pwdError!=true,
@@ -44,6 +66,7 @@ class LoginPageState extends State<LoginPage>{
                   prefixIcon: Icon(Icons.person)
               ),
             ),
+
             TextField(
               controller: passwordController,
               autofocus:pwdError==true,
@@ -53,17 +76,22 @@ class LoginPageState extends State<LoginPage>{
               ),
               obscureText: true,
             ),
+
             RaisedButton(
+
                 child: Text("登录"),
                 onPressed: () async {
+
                   setState(() {
-                    s=state.logining;
+                    currentLoginPageState=loginPageState.logining;
                   });
+
                   if(await tryLogin()) {
 
                     HttpClientResponse response =await Sict.queryCourse();
                     String body=await response.transform(utf8.decoder).join();
                     String userInfo=(await Sict.getUser()).toString();
+                    //todo 获取到的body即使是错误的也会存入本地缓存 缺少错误校验
                     Info.setMap({
                       'account':accountController.text,
                       'password':passwordController.text,
@@ -79,30 +107,25 @@ class LoginPageState extends State<LoginPage>{
                       ),
                     );
                     Info.saveSync();
+
                   }else {
-                    setState(() {
-                      s=state.reinputing;
+
+                    setState((){
+                      currentLoginPageState=loginPageState.reinputing;
                     });
+
                     MyHttp.emptyCookie();
                   }
+
                 }
             )
             ,
           ],
         );
-      case state.logining:
+
+      case loginPageState.logining:
         return Center(heightFactor:9,child:CircularProgressIndicator(value: null,));
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(titles[s.index]),
-      ),
-      body:getBody()
-    );
   }
   Future<bool> tryLogin() async {
 
@@ -115,7 +138,7 @@ class LoginPageState extends State<LoginPage>{
     var index=html.indexOf("CryptoJS.SHA1('")+"CryptoJS.SHA1('".length;
     var sha1String = html.substring(index,index+37);
     var bytes = utf8.encode(sha1String+passwordController.text);
-    sleep(new Duration(milliseconds: 500));
+    await Future.delayed(Duration(milliseconds: 500));
     response=await  Sict.post('login.action',
         'username=${accountController.text}&password=${sha1.convert(bytes).toString()}&encodedPassword=&session_locale=zh_CN');
     if(response.statusCode==302) {

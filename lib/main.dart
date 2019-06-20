@@ -6,6 +6,7 @@ import 'package:sict/page/LoginPage.dart';
 import 'package:sict/tools/Info.dart';
 
  main()  async {
+
    Info.init();
    runApp(MaterialApp(
      title: 'SICT',

@@ -1,4 +1,5 @@
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -9,34 +10,41 @@ import 'package:sict/page/LoginPage.dart';
 import 'package:sict/page/Scorepage.dart';
 import 'package:sict/tools/Info.dart';
 import 'package:sict/tools/Sict.dart';
+import 'package:flutter_share_me/flutter_share_me.dart';
+
 GlobalKey myKey ;
 String body=Info.get(Sict.thisWeek().toString());
 List<Course> courses=body==null?!null:Course.creatList(body);
 ScrollController scrollController=ScrollController();
 
-class CourseTablePage extends StatelessWidget{
-  refreshPage(BuildContext context) async {
-    await Sict.refreshCourse();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context)=>CourseTablePage(),),
-    );
+class CourseTablePage extends StatefulWidget{
+
+
+  @override
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return CourseTablePageState();
   }
+
+}
+
+class CourseTablePageState extends State{
+
   @override
   Widget build(BuildContext context) {
     myKey=GlobalKey();
     scrollController.addListener((){scrollController.jumpTo(0);});
+
     if (Info.get(Sict.thisWeek().toString())==null){
-      refreshPage(context);
+      Sict.refreshCourse().whenComplete(()=>setState((){}));
       return Center(heightFactor:9,child:CircularProgressIndicator(value: null,));
     }
-    courses =Course.creatList(Info.get(Sict.thisWeek().toString()));
+
     return Scaffold(
         drawer: Drawer(
-          // Add a ListView to the drawer. This ensures the user can scroll
-          // through the options in the Drawer if there isn't enough vertical
-          // space to fit everything.
+
           child: ListView(
-            // Important: Remove any padding from the ListView.
+
             padding: EdgeInsets.zero,
             children: <Widget>[
               DrawerHeader(
@@ -81,6 +89,13 @@ class CourseTablePage extends StatelessWidget{
                 },
               ),
               ListTile(
+                title: Text('分享'),
+                onTap: () {
+                  FlutterShareMe().shareToSystem(
+                      msg: '我超好用的,大家快来下载我吧');
+                },
+              ),
+              ListTile(
                 title: Text('注销'),
                 onTap: () {
                   Navigator.of(context).pushReplacement(
@@ -97,35 +112,15 @@ class CourseTablePage extends StatelessWidget{
         ),
         appBar: AppBar(
           title: Text('课程 - 第${Sict.thisWeek()}周'),
-//          centerTitle: true,
-//          actions: <Widget>[ //导航栏右侧菜单
-//            IconButton(
-//                icon: Icon(Icons.refresh),
-//                onPressed: () async {
-//                  if(await LoginPageState().tryLogin()) {
-//
-//                    HttpClientResponse response =await Sict.queryCourse();
-//                    String body=await response.transform(utf8.decoder).join();
-//                    Info.set('${Sict.thisWeek()}', body);
-//
-//                    Navigator.of(context).pushReplacement(
-//                      MaterialPageRoute(builder: (context)=>CourseTablePage(),),
-//                    );
-//                    Toast.show(message:'刷新成功');
-//                  }else {
-//                    MyHttp.emptyCookie();
-//                  }
-//                }
-//            ),
-//          ],
+
         ),
         body:RefreshIndicator(
             child: SingleChildScrollView(
               key: myKey,
               controller:scrollController ,
               child: Flow(
-              delegate: CourseFlowDelegate(),
-              children:courses.map((e)=>Container(
+                delegate: CourseFlowDelegate(),
+                children:courses.map((e)=>Container(
                   margin:EdgeInsets.all(2),
                   padding: EdgeInsets.all(3),
                   child:Text(
@@ -140,36 +135,18 @@ class CourseTablePage extends StatelessWidget{
                       borderRadius:BorderRadius.circular(10)
                   ),
 
-              )).toList(),
-            ),),
+                )).toList(),
+              ),),
             onRefresh: () async {
-              refreshPage(context);
+              await Sict.refreshCourse();
+              setState(() {
+                courses=Course.creatList(Info.get(Sict.thisWeek().toString()));
+              });
+
             })
-//        GridView(
-//          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-//            crossAxisCount: 5, //横轴三个子widget
-//            childAspectRatio: 0.703 //宽高比为1时，子widget
-//          ),
-//          children:Containers().toList(),
-//       )
-//          Container(
-//              child: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                children: <Widget>[
-//                  getExpanded(1),
-//                  getExpanded(3),
-//                  getExpanded(5),
-//                  getExpanded(7),
-//                  getExpanded(9),
-//
-////                  Text('星期六'+lessons.where((c)=>c.weekday==6).toList()[0].toString())
-//                ],),
-//        ),
+
     );
   }
-//  Future<String> getCourseBody(BuildContext context) async {
-//
-//  }
-
 }
 
 class CourseFlowDelegate extends FlowDelegate{
@@ -218,46 +195,8 @@ class CourseFlowDelegate extends FlowDelegate{
   }
 
 }
-//mergeCourse(){
-//  courses.forEach((e){
-//    courses.where((a){
-//      return e.weekday==a.weekday&&
-//        e.classRoom==a.classRoom&&
-//        e.name==a.name&&
-//        e.startLesson==a.
-//    });
-//  });
-//}
+
 Iterable<Container> Containers()sync*{
   for(int i=0;i<25;i++)yield Container(color:Color(i*20000000),);
 }
 
-//List<Course> lessons= Course.creatList(Info.get(Sict.thisWeek().toString())) ;
-//getExpandeds(lesson){
-//  getExpanded(weekDay){
-//
-//    List<Course> lessons= Course.creatList(Info.get(Sict.thisWeek().toString()))
-//        .where((f)=>f.startLesson==lesson)
-//        .toList();
-//    if(lessons.any((f)=>f.weekday==weekDay)) {
-//      var c=lessons.firstWhere((c)=>c.weekday==weekDay);
-//      return Expanded(flex: 1,child: Container(
-//        color: Colors.blueAccent,child: Text(
-//          c.toString()
-//      ),
-//      ),);
-//    }else{
-//      return Expanded(flex: 1,child: Container(
-//        child: Text(''),
-//      ),);
-//    }
-//  }
-//  List<Expanded> r=List();
-//  for(int i= 1;i<=5;i++) {
-//    r.add(getExpanded(i));
-//  }
-//  return r;
-//}
-//getExpanded(lesson){
-//  return Expanded(flex: 1,child:Row(children:getExpandeds(lesson),));
-//}
