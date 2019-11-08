@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:sict/page/LoginPage.dart';
 import 'package:sict/tools/Info.dart';
 import 'package:sict/tools/MyHttp.dart';
 import 'package:sict/entity/User.dart';
+import 'package:sict/tools/date.dart';
 
 class Sict {
   static login(String account ,String password) async {
@@ -51,7 +53,7 @@ class Sict {
     if(await loginByCache()) {
       HttpClientResponse response =await Sict.queryCourse();
       String body=await response.transform(utf8.decoder).join();
-      Info.set('${Sict.thisWeek()}', body);
+      Info.set('${thisWeek(getSemesterStartDate())}', body);
       Info.saveSync();
       return true;
     }else {
@@ -61,7 +63,7 @@ class Sict {
   }
 
   static  Future<HttpClientResponse> queryScore(){
-     return  Sict.get('/teach/grade/course/person!search.action','semesterId=60');
+     return  Sict.get('/teach/grade/course/person!search.action','semesterId=104');
   }
 
   static Future<User> getUser() async {
@@ -91,25 +93,27 @@ class Sict {
 
   static Future<HttpClientResponse> queryCourse() async {
 
+    await get("home!submenus.action", '');
+    //    await get("home!welcome.action", '');
+
     String idsLine = await (await Sict.getLines('courseTableForStd.action'))
-                              .elementAt(146);
+                              .elementAt(149);
     String ids=  RegExp(r'[0-9]+').stringMatch(idsLine);
     Info.set('ids', ids);
 
     return await Sict.post(
         'courseTableForStd!courseTable.action',
-        'ignoreHead=1&setting.kind=std&startWeek=${thisWeek()}&semester.id=${getSemesterId()}&ids=$ids'
+        'ignoreHead=1'
+        '&setting.kind=std'
+        '&startWeek=${thisWeek(getSemesterStartDate())}'
+        '&semester.id=${getSemesterId()}'
+        '&ids=$ids'
+        '&project.id=1'
     );
 
   }
-  static int getSemesterId()=>82;
+  static int getSemesterId()=>104;
 
-  static int thisWeek() {
-    Duration difference = DateTime.now().difference(getSemesterStartDate());
-    return difference.inDays~/7+1;
-  }
-
-  static DateTime getSemesterStartDate() => DateTime(2019,6,10);
 
   static Future<HttpClientResponse> post(String path,[data]) {
     Uri uri=Uri(scheme: "http",host: "szyjxgl.sict.edu.cn",port:9000,path:'eams/$path');

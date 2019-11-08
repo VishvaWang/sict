@@ -8,6 +8,7 @@ import 'package:sict/tools/Info.dart';
 import 'package:sict/tools/MyHttp.dart';
 import 'package:flutter_just_toast/flutter_just_toast.dart';
 import 'package:sict/tools/Sict.dart';
+import 'package:sict/tools/date.dart';
 class LoginPage extends StatefulWidget{
   @override
   State<LoginPage> createState() {
@@ -30,8 +31,6 @@ class LoginPageState extends State<LoginPage>{
 
   List<String> titles=['输入中 · · ·','登录中 · · ·','重新输入 · · ·'];
   bool pwdError;
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -87,16 +86,18 @@ class LoginPageState extends State<LoginPage>{
                   });
 
                   if(await tryLogin()) {
-
                     HttpClientResponse response =await Sict.queryCourse();
                     String body=await response.transform(utf8.decoder).join();
-                    String userInfo=(await Sict.getUser()).toString();
+//                    String userInfo=(await Sict.getUser()).toString();
+                    //todo getuser失败
+                    String userInfo="";
+
                     //todo 获取到的body即使是错误的也会存入本地缓存 缺少错误校验
                     Info.setMap({
                       'account':accountController.text,
                       'password':passwordController.text,
                       'cookie':MyHttp.cookie,
-                      '${Sict.thisWeek()}':body,
+                      '${thisWeek(getSemesterStartDate())}':body,
                       'userInfo':userInfo
                     });
 
@@ -146,7 +147,7 @@ class LoginPageState extends State<LoginPage>{
     }else {
       String messageLine=await response
           .transform(utf8.decoder) //解码字节流
-          .transform(new LineSplitter()).elementAt(62);
+          .transform(LineSplitter()).elementAt(62);
       String message=RegExp(r'>(.*?)<').firstMatch(messageLine).group(1);
       pwdError=message=='密码错误';
       Toast.show(
