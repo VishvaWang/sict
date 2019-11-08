@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,6 +16,9 @@ import 'package:sict/tools/Info.dart';
      ),
      home: init(),
    ));
+   SystemUiOverlayStyle systemUiOverlayStyle =
+   SystemUiOverlayStyle(statusBarColor: Colors.transparent);
+   SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
 }
 Widget init()  {
   if(Info.firstLaunch==null?!File(Info.filePath).existsSync():Info.firstLaunch){//未初始化完成则同步判断文件是否存在
