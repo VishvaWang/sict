@@ -1,2 +1,2 @@
 # sict
-![avatar](readmeImages/courseTable.jpg) 
+<img src="readmeImages/courseTable.jpg" width="400">
